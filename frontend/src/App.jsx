@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { api, post } from './lib/api.js'
 import { navigate, useLocation, match } from './lib/router.js'
-import { AppContext, Icon, Link, Loading, Button } from './components/ui.jsx'
+import { AppContext, Icon, Link, Loading, Button, ThemeToggle } from './components/ui.jsx'
 import Login, { ChangerMotDePasse } from './pages/Login.jsx'
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'))
@@ -118,11 +118,12 @@ function Shell({ user, children, path, onLogout }) {
           <button type="button" className="icon-btn burger" onClick={() => setOuvert(o => !o)} aria-label="Menu"><Icon name="menu" /></button>
           <GlobalSearch />
           <div className="topbar-right">
+            <ThemeToggle />
             <Link to="/mon-espace" className="user-chip"><span className="avatar">{user.nom.slice(0, 1).toUpperCase()}</span><span className="user-txt"><b>{user.nom}</b><small>{user.roleLibelle}</small></span></Link>
             <button type="button" className="icon-btn" title="Déconnexion" onClick={onLogout}><Icon name="logout" /></button>
           </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content"><div className="page" key={path}>{children}</div></main>
       </div>
     </div>
   )

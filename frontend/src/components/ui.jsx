@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { api, qs } from '../lib/api.js'
 import { couleur, lib } from '../lib/format.js'
 import { navigate } from '../lib/router.js'
+import { iconClass } from '../lib/icons.js'
 
 // ---------------------------------------------------------------- contexte de l'application
 export const AppContext = createContext(null)
@@ -12,7 +13,35 @@ export function useCan() {
 }
 
 export function Icon({ name, size, className = '' }) {
-  return <span className={`material-icons-round ${className}`} style={size ? { fontSize: size } : undefined} aria-hidden="true">{name}</span>
+  return <i className={`ico ${iconClass(name)} ${className}`} style={size ? { fontSize: size } : undefined} aria-hidden="true" />
+}
+
+// ---------------------------------------------------------------- thème clair / sombre / système
+const THEMES = ['system', 'light', 'dark']
+const lireTheme = () => { try { return localStorage.getItem('tuktuk:theme') || 'system' } catch { return 'system' } }
+export function appliquerTheme(t) {
+  const sombre = t === 'dark' || (t === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+  document.documentElement.dataset.theme = sombre ? 'dark' : 'light'
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', sombre ? '#0b0f1a' : '#0c1445')
+}
+export function useTheme() {
+  const [theme, setTheme] = useState(lireTheme)
+  useEffect(() => {
+    appliquerTheme(theme)
+    try { localStorage.setItem('tuktuk:theme', theme) } catch { /* stockage indisponible */ }
+    if (theme !== 'system') return undefined
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    const f = () => appliquerTheme('system')
+    mq?.addEventListener('change', f)
+    return () => mq?.removeEventListener('change', f)
+  }, [theme])
+  const suivant = () => setTheme(t => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length])
+  return [theme, suivant]
+}
+export function ThemeToggle() {
+  const [theme, suivant] = useTheme()
+  const info = { system: ['contrast', 'Thème : système'], light: ['light_mode', 'Thème : clair'], dark: ['dark_mode', 'Thème : sombre'] }[theme]
+  return <button type="button" className="icon-btn" title={`${info[1]} (cliquer pour changer)`} aria-label={info[1]} onClick={suivant}><Icon name={info[0]} size={17} /></button>
 }
 
 export function Link({ to, children, className = '', title }) {
