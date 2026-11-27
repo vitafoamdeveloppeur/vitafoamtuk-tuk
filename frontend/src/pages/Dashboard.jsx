@@ -16,13 +16,16 @@ export default function Dashboard() {
   const a = data?.attente
   return (
     <>
-      <PageHead title={`Bonjour ${user.nom.split(' ')[0]}`} subtitle="Activité du programme partenaires tuk-tuk et cyclo-pousse">
+      <PageHead title={`Bonjour ${user.nom.split(' ')[0]}`} subtitle="Activité du programme partenaires tuk-tuk et cyclo-pousse" />
+      <div className="filtre-barre">
+        <div className="segments" role="tablist" aria-label="Période">
+          {Object.entries(P).map(([k, v]) => <button key={k} type="button" role="tab" aria-selected={per === k} className={per === k ? 'on' : ''} onClick={() => setPer(k)}>{v.label}</button>)}
+        </div>
         <Toolbar>
-          <Select value={per} onChange={setPer} options={Object.fromEntries(Object.entries(P).map(([k, v]) => [k, v.label]))} />
           <AgenceSelect value={agence} onChange={setAgence} />
-          <Select value={type} onChange={setType} options={ref.TYPES_VEHICULE} placeholder="Tuk-tuk et cyclo" />
+          <Select value={type} onChange={setType} options={ref.TYPES_VEHICULE} placeholder="Tous véhicules" />
         </Toolbar>
-      </PageHead>
+      </div>
       <ErrorBox error={error} onRetry={reload} />
       {loading && !data ? <Loading /> : data && (
         <>

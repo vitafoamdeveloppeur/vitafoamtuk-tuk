@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { api, post } from './lib/api.js'
 import { navigate, useLocation, match } from './lib/router.js'
 import { AppContext, Icon, Link, Loading, Button, ThemeToggle } from './components/ui.jsx'
@@ -66,7 +66,7 @@ function Toasts({ items, onClose }) {
     <div className="toasts">
       {items.map(t => (
         <div key={t.id} className={`toast toast-${t.type}`} role="status" onClick={() => onClose(t.id)}>
-          <Icon name={t.type === 'erreur' ? 'error' : 'check_circle'} /> {t.message}
+          <Icon name={t.type === 'erreur' ? 'error' : 'check_circle'} /><span>{t.message}</span>
         </div>
       ))}
     </div>
@@ -83,7 +83,7 @@ function GlobalSearch() {
   }, [q])
   return (
     <div className="gsearch">
-      <Icon name="search" size={18} />
+      <Icon name="search" size={16} />
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Code conducteur, client, téléphone, n° de fiche…" aria-label="Recherche" />
       {res.length > 0 && (
         <div className="gsearch-results">
@@ -94,37 +94,60 @@ function GlobalSearch() {
   )
 }
 
-function Shell({ user, children, path, onLogout }) {
+const initiales = nom => String(nom || '').split(' ').filter(Boolean).slice(0, 2).map(m => m[0].toUpperCase()).join('')
+
+function Shell({ user, children, path, onLogout, menu }) {
   const [ouvert, setOuvert] = useState(false)
-  const menu = useMemo(() => sections(user), [user])
-  useEffect(() => setOuvert(false), [path])
+  const [profil, setProfil] = useState(false)
+  const can = d => user.droits.includes(d)
+  useEffect(() => { setOuvert(false); setProfil(false) }, [path])
+  useEffect(() => {
+    const k = e => { if (e.key === 'Escape') { setOuvert(false); setProfil(false) } }
+    document.addEventListener('keydown', k)
+    return () => document.removeEventListener('keydown', k)
+  }, [])
   return (
     <div className={`shell${ouvert ? ' menu-ouvert' : ''}`}>
+      <header className="entete-app">
+        <button type="button" className="entete-btn burger" onClick={() => setOuvert(o => !o)} aria-label={ouvert ? 'Fermer le menu' : 'Ouvrir le menu'}><Icon name={ouvert ? 'close' : 'menu'} size={18} /></button>
+        <Link to="/" className="entete-marque"><b>Suivi</b>&nbsp;Tuk-tuk<span className="lg-only">&nbsp;&amp; Cyclo</span></Link>
+        <GlobalSearch />
+        <div className="entete-droite">
+          <ThemeToggle className="entete-btn" />
+          {can('fiches.creer') && <Link to="/fiches/nouvelle" className="entete-btn" title="Nouveau client"><Icon name="add" size={18} /></Link>}
+          {can('alertes.lire') && <Link to="/alertes" className="entete-btn" title="Alertes"><Icon name="notifications" size={17} /></Link>}
+          <div className="profil">
+            <button type="button" className={`entete-btn${profil ? ' on' : ''}`} onClick={() => setProfil(p => !p)} aria-label="Mon compte" aria-expanded={profil}>
+              <span className="avatar">{initiales(user.nom)}</span>
+            </button>
+            {profil && (
+              <>
+                <div className="profil-fond" onClick={() => setProfil(false)} />
+                <div className="profil-menu" role="menu">
+                  <div className="profil-tete"><b>{user.nom}</b>{user.email && <small>{user.email}</small>}<small>{user.roleLibelle}</small></div>
+                  <Link to="/mon-espace">Mon espace</Link>
+                  <button type="button" onClick={onLogout}>Se déconnecter</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+      <div className="overlay" onClick={() => setOuvert(false)} />
       <aside className="sidebar">
-        <div className="brand"><img src="/vitafoam-logo.png" alt="" /><div><b>Suivi Tuk-tuk</b><small>& Cyclo-pousse</small></div></div>
         <nav>
           {menu.map(([titre, entrees]) => (
             <div key={titre} className="nav-group">
               <div className="nav-title">{titre}</div>
-              {entrees.map(e => <Link key={e.label} to={e.to} className={`nav-item${estActif(e, path) ? ' active' : ''}`}><Icon name={e.icon} size={20} />{e.label}</Link>)}
+              {entrees.map(e => <Link key={e.label} to={e.to} className={`nav-item${estActif(e, path) ? ' active' : ''}`}><Icon name={e.icon} size={16} /><span>{e.label}</span></Link>)}
             </div>
           ))}
         </nav>
-        <div className="sidebar-foot">© {new Date().getFullYear()} Vitafoam Madagascar</div>
+        <div className="sidebar-foot"><b>{user.nom}</b><span>{user.roleLibelle}</span><span>© {new Date().getFullYear()} Vitafoam Madagascar</span></div>
       </aside>
-      <div className="overlay" onClick={() => setOuvert(false)} />
-      <div className="main">
-        <header className="topbar">
-          <button type="button" className="icon-btn burger" onClick={() => setOuvert(o => !o)} aria-label="Menu"><Icon name="menu" /></button>
-          <GlobalSearch />
-          <div className="topbar-right">
-            <ThemeToggle />
-            <Link to="/mon-espace" className="user-chip"><span className="avatar">{user.nom.slice(0, 1).toUpperCase()}</span><span className="user-txt"><b>{user.nom}</b><small>{user.roleLibelle}</small></span></Link>
-            <button type="button" className="icon-btn" title="Déconnexion" onClick={onLogout}><Icon name="logout" /></button>
-          </div>
-        </header>
-        <main className="content"><div className="page" key={path}>{children}</div></main>
-      </div>
+      <main className="main">
+        <div className="content"><div className="page" key={path}>{children}</div></div>
+      </main>
     </div>
   )
 }
@@ -158,7 +181,9 @@ export default function App() {
   if (user.motDePasseProvisoire) return <ChangerMotDePasse onDone={() => setUser({ ...user, motDePasseProvisoire: false })} onLogout={logout} />
   if (!refData) return <Loading />
 
-  const ctx = { user, ref: refData.ref, agences: refData.agences, roles: refData.roles, odooUrl: refData.odooUrl, entreprise: refData.entreprise, toast, reloadRef: chargerRef, setUser }
+  const menu = sections(user)
+  const entree = menu.flatMap(([, e]) => e).find(e => estActif(e, path))
+  const ctx = { user, ref: refData.ref, agences: refData.agences, roles: refData.roles, odooUrl: refData.odooUrl, entreprise: refData.entreprise, toast, reloadRef: chargerRef, setUser, pageIcon: entree?.icon }
   let Page = null
   let params = {}
   for (const [pattern, Comp] of ROUTES) {
@@ -167,7 +192,7 @@ export default function App() {
   }
   return (
     <AppContext.Provider value={ctx}>
-      <Shell user={user} path={path} onLogout={logout}>
+      <Shell user={user} path={path} onLogout={logout} menu={menu}>
         <Suspense fallback={<Loading />}>
           {Page ? <Page key={path} path={path} params={params} search={search} /> : path === '/' ? <Loading /> : (
             <div className="empty"><Icon name="explore_off" size={40} /><p>Page introuvable.</p><Button onClick={() => navigate('/')}>Accueil</Button></div>

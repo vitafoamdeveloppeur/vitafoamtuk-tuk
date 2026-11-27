@@ -18,6 +18,7 @@ export const ICONS = {
   // états
   check_circle: 'check-circle-fill', task_alt: 'check2-circle', cancel: 'x-circle-fill', error: 'exclamation-circle-fill',
   info: 'info-circle', verified: 'patch-check', inbox: 'inbox', search_off: 'search', explore_off: 'signpost-split', circle: 'circle',
+  notifications: 'bell', visibility_off: 'eye-slash',
   // thème
   light_mode: 'sun', dark_mode: 'moon-stars', contrast: 'circle-half',
 }

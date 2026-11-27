@@ -38,10 +38,10 @@ export function useTheme() {
   const suivant = () => setTheme(t => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length])
   return [theme, suivant]
 }
-export function ThemeToggle() {
+export function ThemeToggle({ className = 'icon-btn' }) {
   const [theme, suivant] = useTheme()
-  const info = { system: ['contrast', 'Thème : système'], light: ['light_mode', 'Thème : clair'], dark: ['dark_mode', 'Thème : sombre'] }[theme]
-  return <button type="button" className="icon-btn" title={`${info[1]} (cliquer pour changer)`} aria-label={info[1]} onClick={suivant}><Icon name={info[0]} size={17} /></button>
+  const info = { system: ['contrast', 'Thème du système'], light: ['light_mode', 'Thème clair'], dark: ['dark_mode', 'Thème sombre'] }[theme]
+  return <button type="button" className={className} title={`${info[1]} (cliquer pour changer)`} aria-label={info[1]} onClick={suivant}><Icon name={info[0]} size={17} /></button>
 }
 
 export function Link({ to, children, className = '', title }) {
@@ -70,12 +70,17 @@ export function Button({ icon, children, variant = 'primary', busy, className = 
 }
 
 export function PageHead({ title, subtitle, children, back }) {
+  const app = useApp()
+  const icone = app?.pageIcon
   return (
     <div className="page-head">
-      <div>
-        {back && <Link to={back} className="back"><Icon name="arrow_back" size={16} /> Retour</Link>}
-        <h1>{title}</h1>
-        {subtitle && <p className="muted">{subtitle}</p>}
+      <div className="page-titre">
+        {icone && <span className="page-ico"><Icon name={icone} size={22} /></span>}
+        <div>
+          {back && <Link to={back} className="back"><Icon name="arrow_back" size={14} /> Retour</Link>}
+          <h1>{title}</h1>
+          {subtitle && <p className="muted">{subtitle}</p>}
+        </div>
       </div>
       <div className="page-actions">{children}</div>
     </div>
@@ -109,9 +114,11 @@ export function PageTabs({ tabs, current }) {
 export function Stat({ icon, label, value, hint, tone = 'blue', onClick }) {
   return (
     <div className={`stat stat-${tone}${onClick ? ' clickable' : ''}`} onClick={onClick} role={onClick ? 'button' : undefined}>
-      <div className="stat-ico"><Icon name={icon} /></div>
-      <div className="stat-body">
+      <div className="stat-top">
         <div className="stat-label">{label}</div>
+        <div className="stat-ico"><Icon name={icon} size={18} /></div>
+      </div>
+      <div className="stat-body">
         <div className="stat-value">{value}</div>
         {hint && <div className="stat-hint">{hint}</div>}
       </div>
